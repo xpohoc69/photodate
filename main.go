@@ -9,6 +9,7 @@ import (
 	"github.com/golang-module/carbon/v2"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"regexp"
@@ -83,7 +84,7 @@ func loadFlags() Flags {
 func handlePhoto(waitGroup *sync.WaitGroup, photo string, carbonDateTime carbon.Carbon) {
 	im, err := gg.LoadImage(fmt.Sprintf("%v/%v", sourcePath, photo))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	imgWidth := im.Bounds().Dx()
 	imgHeight := im.Bounds().Dy()
@@ -94,7 +95,7 @@ func handlePhoto(waitGroup *sync.WaitGroup, photo string, carbonDateTime carbon.
 
 	dc.SetRGB(1, 1, 1)
 	if err := dc.LoadFontFace(fontPath, fontSize); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	dc.DrawImage(im, 0, 0)
 	dc.DrawString(carbonDateTime.Format(photoDateTimeFormat), float64(imgWidth)*0.7, float64(imgHeight-20))
@@ -104,7 +105,7 @@ func handlePhoto(waitGroup *sync.WaitGroup, photo string, carbonDateTime carbon.
 	fileName := strings.Join(words[:len(words)-1], ".")
 	err = gg.SaveJPG(fmt.Sprintf("%v/%v.jpg", targetPath, fileName), dc.Image(), 100)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	waitGroup.Done()
 }
@@ -112,9 +113,12 @@ func handlePhoto(waitGroup *sync.WaitGroup, photo string, carbonDateTime carbon.
 func removeTargetPhotos() {
 	targetFiles := listDirByReadDir(targetPath)
 	for _, targetFile := range targetFiles {
+		if targetFile == ".gitignore" {
+			continue
+		}
 		err := os.Remove(fmt.Sprintf("%v/%v", targetPath, targetFile))
 		if err != nil && errors.Is(err, os.ErrNotExist) == false {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
 }
@@ -123,14 +127,14 @@ func listDirByReadDir(path string) []string {
 	var files []string
 	lst, err := ioutil.ReadDir(path)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	for _, val := range lst {
 		if val.IsDir() {
 			continue
 		}
 		name := val.Name()
-		if name == "" {
+		if name == "" || name == ".gitignore" {
 			continue
 		}
 		files = append(files, name)
@@ -142,12 +146,12 @@ func listDirByReadDir(path string) []string {
 func createZip(files []string) {
 	archive, err := os.Create(fmt.Sprintf("%v/photos.zip", targetPath))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer func(archive *os.File) {
 		err := archive.Close()
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}(archive)
 
@@ -159,26 +163,26 @@ func createZip(files []string) {
 
 		f, err := os.Open(fmt.Sprintf("%v/%v.jpg", targetPath, fileName))
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		w, err := zipWriter.Create(fmt.Sprintf("%v.jpg", fileName))
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		if _, err := io.Copy(w, f); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		err = f.Close()
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
 
 	err = zipWriter.Close()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	fmt.Println(fmt.Sprintf("Success! Zip archive available in %v/photos.zip", targetPath))
