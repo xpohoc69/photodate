@@ -12,6 +12,7 @@ In each subsequent photo, the date will be larger by rand(minSec, maxSec) than t
 4. run from project directory command `photodate -sdt="2022-01-01 10:00:00" -min-sec=5 -max-sec=10`
 5. photos with date will be available in target directory with .zip archive
 
+```
 Options:
     -max-sec int
         Max seconds to add (default 10)
@@ -19,3 +20,4 @@ Options:
         Min seconds to add (default 5)
     -sdt string
         Start date time photo (Y-m-d H:i:s)
+```
