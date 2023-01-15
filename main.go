@@ -2,11 +2,13 @@ package main
 
 import (
 	"archive/zip"
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
 	"github.com/fogleman/gg"
 	"github.com/golang-module/carbon/v2"
+	"github.com/golang/freetype/truetype"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,13 +23,15 @@ import (
 const sourcePath = "./source"
 const targetPath = "./target"
 const photoDateTimeFormat = "Y/m/d H:i:s"
-const fontPath = "./kinetika.ttf"
 
 type Flags struct {
 	startDateTime string
 	minSecAdd     int
 	maxSecAdd     int
 }
+
+//go:embed kinetika.ttf
+var font []byte
 
 func main() {
 	flags := loadFlags()
@@ -92,11 +96,14 @@ func handlePhoto(waitGroup *sync.WaitGroup, photo string, carbonDateTime carbon.
 	fontSize := float64(imgHeight) * 0.04
 
 	dc := gg.NewContext(imgWidth, imgHeight)
-
 	dc.SetRGB(1, 1, 1)
-	if err := dc.LoadFontFace(fontPath, fontSize); err != nil {
+	f, err := truetype.Parse(font)
+	if err != nil {
 		log.Fatal(err)
 	}
+	dc.SetFontFace(truetype.NewFace(f, &truetype.Options{
+		Size: fontSize,
+	}))
 	dc.DrawImage(im, 0, 0)
 	dc.DrawString(carbonDateTime.Format(photoDateTimeFormat), float64(imgWidth)*0.7, float64(imgHeight-20))
 	dc.Clip()
